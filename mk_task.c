@@ -6,13 +6,15 @@
 #include <string.h>
 
 /*----------------------- Typedefs & Macros ------------------------*/
-#define STACK_FILL_BYTE             (0xA5U)
+#define STACK_FILL_BYTE                     (0xA5U)
+#define RESERVED_MINIMUM_TASK_PRIORITY      (0U)
 
 /*----------- Data Region (constants, variables, static) -----------*/
 
 /*------------------ Static Functions Declaration ------------------*/
 static TCB_t *_create_new_task(mk_TaskInit_t *ptask_init);
 static void _initialize_new_task(mk_TaskInit_t *ptask_init, TCB_t *ptcb);
+static void _Idle_task_func(void *param);
 
 /*------------------- All Functions Definitions --------------------*/
 
@@ -27,7 +29,7 @@ mk_i32 mk_task_create(mk_TaskInit_t *ptask_init) {
 
     if (pnew_tcb != MK_NULL) {
         /* if tcb allocated then add new task to ready list */
-        mk_schd_add_task_to_ready_list(pnew_tcb);
+        mk_scheduler_add_task_to_list(pnew_tcb);
         return MK_SUCCESS;
     }
     return MK_FAILURE;
@@ -101,4 +103,24 @@ static void _initialize_new_task(mk_TaskInit_t *ptask_init, TCB_t *ptcb) {
 
     /* Set the top od stack after initializtion*/
     ptcb->ptop_of_stack = PortInitializeStackSpace(ptop_of_stack, ptask_init->task_func);
+}
+
+void mk_task_create_idle_task(void) {
+    mk_TaskInit_t idle_task = {
+        .priority = RESERVED_MINIMUM_TASK_PRIORITY,
+        .stack_depth = MK_CONFIG_MINIMAL_STACK_SIZE,
+        .ptask_name = "idle_task",
+        .task_func = _Idle_task_func,
+    };
+
+    mk_task_create(&idle_task);
+
+}
+
+static void _Idle_task_func(void *param) {
+    while(1) {
+        #ifdef MK_CONFIG_IDLE_TASK_HOOK
+            ApplicationIdleTaskHook();
+        #endif
+    }
 }

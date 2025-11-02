@@ -7,10 +7,14 @@
 #define port_WORD_ALIGNMENT_MASK                    ((port_WORD_ALIGNMENT) - 1)
 #define port_POINTER_SIZE_TYPE                      uint32_t
 #define port_Stack_Type                             uint32_t
+#define port_Tick_Type                              uint32_t
 
 typedef port_Stack_Type StackType_t;
+typedef port_Tick_Type  TickType_t;
 
 /*---------------------- Function Declaration ----------------------*/
 StackType_t *PortInitializeStackSpace(StackType_t *ptop_of_stack, void* pcode);
+void PortConfigureSystemClock(uint32_t systick_reload_value);
+void PortStartScheduler(void);
 
 #endif // _MK_PORT_H_

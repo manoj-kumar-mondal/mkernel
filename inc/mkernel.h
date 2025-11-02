@@ -17,6 +17,14 @@
     #error Missing Definition:  MK_CONFIG_USE_PREEMPTION must be define in mk_config.h file either 0 or 1.
 #endif
 
+#ifndef MK_CONFIG_CPU_CLOCK_HZ
+    #error Missing Definition:  MK_CONFIG_CPU_CLOCK_HZ must be define in mk_config.h file, please mention the clock speed of the systick for your board.
+#endif
+
+#ifndef MK_CONFIG_TICK_RATE_HZ
+    #error  Missing Definition:  MK_CONFIG_TICK_RATE_HZ must be defined in mk_config.h file.
+#endif
+
 #ifndef MK_CONFIG_TASK_NAME_MAX_LENGTH
     #define MK_CONFIG_TASK_NAME_MAX_LENGTH      (12U)
 #endif

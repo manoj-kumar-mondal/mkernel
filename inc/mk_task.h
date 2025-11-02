@@ -27,5 +27,6 @@ typedef struct {
 
 /*---------------------- Function Declaration ----------------------*/
 mk_i32 mk_task_create(mk_TaskInit_t *ptask_init);
+void mk_task_create_idle_task(void);
 
 #endif // _MK_TASK_H_
