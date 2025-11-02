@@ -22,7 +22,7 @@
 #endif
 
 #ifndef MK_CONFIG_MEMORY_POOL_SIZE
-    #define MK_CONFIG_MEMORY_POOL_SIZE          (1024)
+    #define MK_CONFIG_MEMORY_POOL_SIZE          (256)
 #endif
 
 #ifndef port_POINTER_SIZE_TYPE

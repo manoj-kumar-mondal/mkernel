@@ -2,9 +2,11 @@
 #ifndef _MK_DEFS_H_
 #define _MK_DEFS_H_
 
+/*------------------------- Includes Files -------------------------*/
 #include <stdint.h>
 #include <stddef.h>
 
+/*----------------------- Typedefs & Macros ------------------------*/
 typedef uint8_t         mk_u8;
 typedef int8_t          mk_i8;
 typedef uint16_t        mk_u16;
