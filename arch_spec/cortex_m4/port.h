@@ -9,6 +9,10 @@
 #define port_Stack_Type                             uint32_t
 #define port_Tick_Type                              uint32_t
 
+#define port_svc_handler                            SVC_Handler
+#define port_systick_handler                        SysTick_Handler
+#define port_pendsv_handler                         PendSV_Handler
+
 typedef port_Stack_Type StackType_t;
 typedef port_Tick_Type  TickType_t;
 

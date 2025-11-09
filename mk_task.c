@@ -4,6 +4,7 @@
 #include "mk_memory.h"
 #include "mk_scheduler.h"
 #include <string.h>
+#include <stdio.h>
 
 /*----------------------- Typedefs & Macros ------------------------*/
 #define STACK_FILL_BYTE                     (0xA5U)
@@ -14,7 +15,7 @@
 /*------------------ Static Functions Declaration ------------------*/
 static TCB_t *_create_new_task(mk_TaskInit_t *ptask_init);
 static void _initialize_new_task(mk_TaskInit_t *ptask_init, TCB_t *ptcb);
-static void _Idle_task_func(void *param);
+void _Idle_task_func(void *param);
 
 /*------------------- All Functions Definitions --------------------*/
 
@@ -117,8 +118,12 @@ void mk_task_create_idle_task(void) {
 
 }
 
-static void _Idle_task_func(void *param) {
+mk_u32 _idle_task_count = 0;
+
+void _Idle_task_func(void *param) {
     while(1) {
+        _idle_task_count++;
+        printf("printing from idle task\n");
         #ifdef MK_CONFIG_IDLE_TASK_HOOK
             ApplicationIdleTaskHook();
         #endif

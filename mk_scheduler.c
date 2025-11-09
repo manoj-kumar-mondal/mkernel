@@ -18,7 +18,8 @@ static TaskHandlerForScheduler_t *pcurrent_task = MK_NULL;
 static mk_u8 _total_task_created = 0;
 static mk_bool _scheduler_running = MK_FALSE;
 static TickType_t _tick_count;
- 
+static mk_ScheduleType_t _schedule_algo = e_roundrobin;
+
 /*------------------ Static Functions Declaration ------------------*/
 static void _configure_sys_tick(void);
 
@@ -62,17 +63,49 @@ void mk_scheduler_add_task_to_list(TCB_t *ptcb) {
  */
 void mk_scheduler_start(mk_ScheduleType_t schedule_type) {
 
-    if (pstart_block != NULL) {
-        _configure_sys_tick();
-        mk_task_create_idle_task();
+    _scheduler_running = MK_TRUE;
+    _tick_count = INITIAL_TICK_COUNT;
+    _schedule_algo = schedule_type;
 
-        _tick_count = INITIAL_TICK_COUNT;
-        _scheduler_running = MK_TRUE;
-        PortStartScheduler();
-    }
+    _configure_sys_tick();
+    mk_task_create_idle_task();
+    PortStartScheduler();
+    
 }
 
 static void _configure_sys_tick(void) {
     const mk_u32 systick_reload_value = ((MK_CONFIG_CPU_CLOCK_HZ)/(MK_CONFIG_TICK_RATE_HZ));
     PortConfigureSystemClock(systick_reload_value);
+}
+
+/**
+ * @brief   Function that returns current sys tick count
+ * @param   none
+ * @retval  current systick count
+ */
+mk_u32 get_systick_count(void) {
+    return _tick_count;
+}
+
+mk_bool increment_tick(void) {
+    mk_bool switch_context = MK_FALSE;
+    _tick_count += (TickType_t)1;
+
+    if (e_roundrobin == _schedule_algo) {
+        // switch_context = MK_TRUE;
+    } else if (e_priorityPremption == _schedule_algo) {
+
+    } else if (e_cooperative == _schedule_algo) {
+
+    }
+    return switch_context;
+}
+
+mk_u32 mk_current_task_sp(void) {
+    return (mk_u32)pcurrent_task->ptcb->ptop_of_stack;
+}
+
+extern void _Idle_task_func(void *param);
+void mk_scheduler_run_first_task(void) {
+    _Idle_task_func(NULL);
 }

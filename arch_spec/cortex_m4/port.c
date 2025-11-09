@@ -2,17 +2,37 @@
 /*------------------------- Includes Files -------------------------*/
 #include <stdint.h>
 #include "port.h"
+#include "mk_defs.h"
 
 /*----------------------- Typedefs & Macros ------------------------*/
-#define SYST_CSR                            (0x0E000E010)
-#define SYST_RVR                            (0x0E000E014)
+#define SYST_CSR                            (0xE000E010U)
+#define SYST_RVR                            (0xE000E014U)
+#define ICSR_ADDR                           (0xE000ED04U)
+
+#define port_PENDSV_BIT_POSITION            (28U)
+
 #define port_INITIAL_XPSR_VALUE             (0x01000000U)
 #define port_TASK_RETURN_ADDRESS            (0xFFFFFFFDU)
 
+#define enable_sys_tick_counter()           do { \
+                                                uint32_t *psyst_csr = (uint32_t*)SYST_CSR; \
+                                                *psyst_csr |= (1 << 0); \
+                                            } while(0)
+
+#define port_pendsv_set_bit()               do { \
+                                                uint32_t *pitrp_ctrl_reg = (uint32_t*)ICSR_ADDR; \
+                                                *pitrp_ctrl_reg |= (1 << port_PENDSV_BIT_POSITION); \
+                                            } while(0)
+
 /*----------- Data Region (constants, variables, static) -----------*/
+extern TickType_t _tick_count;
 
 /*------------------ Static Functions Declaration ------------------*/
+static void _set_psp_as_sp(void) __attribute__((naked));
 
+extern mk_bool increment_tick(void);
+extern mk_u32 mk_current_task_sp(void);
+extern void mk_scheduler_run_first_task(void);
 /*------------------- All Functions Definitions --------------------*/
 
 /**
@@ -63,9 +83,28 @@ void PortConfigureSystemClock(uint32_t systick_reload_value) {
  * @retval  none
  */
 void PortStartScheduler(void) {
-
+    enable_sys_tick_counter();
+    _set_psp_as_sp();
+    mk_scheduler_run_first_task();
+    while(1);
 }
 
-void SysTick_Handler(void) {
+/**
+ * @brief Systick handler
+ */
+void port_systick_handler(void) {
+    if (MK_TRUE == increment_tick()) {
+        port_pendsv_set_bit(); // set the bit for pendsv handler
+    }
+}
 
+static void _set_psp_as_sp(void) {
+    __asm volatile ("push {lr}");
+    __asm volatile ("bl mk_current_task_sp"); // get the current running task's sp
+    __asm volatile ("msr psp, r0"); // set the psp as task's sp
+    __asm volatile ("pop {lr}");
+
+    __asm volatile ("mov r0, #0x02"); // set 2nd bit for to change sp to psp
+    __asm volatile ("msr control, r0"); // now psp is used as msp
+    __asm volatile ("bx lr");
 }
