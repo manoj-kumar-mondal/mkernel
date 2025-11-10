@@ -15,7 +15,10 @@
 /*------------------ Static Functions Declaration ------------------*/
 static TCB_t *_create_new_task(mk_TaskInit_t *ptask_init);
 static void _initialize_new_task(mk_TaskInit_t *ptask_init, TCB_t *ptcb);
-void _Idle_task_func(void *param);
+static void _Idle_task_func(void *param);
+
+/*------------------ Extern Function Declarations ------------------*/
+extern void e_mk_scheduler_add_task_to_list(TCB_t *ptcb);
 
 /*------------------- All Functions Definitions --------------------*/
 
@@ -30,7 +33,7 @@ mk_i32 mk_task_create(mk_TaskInit_t *ptask_init) {
 
     if (pnew_tcb != MK_NULL) {
         /* if tcb allocated then add new task to ready list */
-        mk_scheduler_add_task_to_list(pnew_tcb);
+        e_mk_scheduler_add_task_to_list(pnew_tcb);
         return MK_SUCCESS;
     }
     return MK_FAILURE;
@@ -102,11 +105,35 @@ static void _initialize_new_task(mk_TaskInit_t *ptask_init, TCB_t *ptcb) {
     }
     ptcb->priority = ptask_init->priority;
 
+    /* Save the function pointer */
+    ptcb->pfunc = (void*)ptask_init->task_func;
+
     /* Set the top od stack after initializtion*/
     ptcb->ptop_of_stack = PortInitializeStackSpace(ptop_of_stack, ptask_init->task_func);
 }
 
-void mk_task_create_idle_task(void) {
+/**
+ * @brief   Idle function
+ * @param   none
+ * @retval  none
+ */
+static void _Idle_task_func(void *param) {
+    while(1) {
+        printf("Idle ...\n");
+        #ifdef MK_CONFIG_IDLE_TASK_HOOK
+            ApplicationIdleTaskHook();
+        #endif
+    }
+}
+
+/*------------------------ Extern Functions ------------------------*/
+
+/**
+ * @brief   Function that create idle task by the scheduler
+ * @param   none
+ * @retval  none
+ */
+void e_mk_task_create_idle_task(void) {
     mk_TaskInit_t idle_task = {
         .priority = RESERVED_MINIMUM_TASK_PRIORITY,
         .stack_depth = MK_CONFIG_MINIMAL_STACK_SIZE,
@@ -116,16 +143,4 @@ void mk_task_create_idle_task(void) {
 
     mk_task_create(&idle_task);
 
-}
-
-mk_u32 _idle_task_count = 0;
-
-void _Idle_task_func(void *param) {
-    while(1) {
-        _idle_task_count++;
-        printf("printing from idle task\n");
-        #ifdef MK_CONFIG_IDLE_TASK_HOOK
-            ApplicationIdleTaskHook();
-        #endif
-    }
 }

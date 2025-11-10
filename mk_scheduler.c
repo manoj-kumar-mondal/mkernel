@@ -23,14 +23,56 @@ static mk_ScheduleType_t _schedule_algo = e_roundrobin;
 /*------------------ Static Functions Declaration ------------------*/
 static void _configure_sys_tick(void);
 
+/*------------------ Extern Function Declarations ------------------*/
+extern void e_mk_task_create_idle_task(void);
+
 /*------------------- All Functions Definitions --------------------*/
+
+/**
+ * @brief   Function is to start the mkernel scheduler.
+ * @param   schedule_type(mk_ScheduleType_t): scheduling algo
+ * @retval  none
+ */
+void mk_scheduler_start(mk_ScheduleType_t schedule_type) {
+
+    _scheduler_running = MK_TRUE;
+    _tick_count = INITIAL_TICK_COUNT;
+    _schedule_algo = schedule_type;
+
+    e_mk_task_create_idle_task();
+    _configure_sys_tick();
+    PortStartScheduler();
+    
+}
+
+/**
+ * @brief   Function that returns current sys tick count
+ * @param   none
+ * @retval  current systick count
+ */
+mk_u32 get_systick_count(void) {
+    return _tick_count;
+}
+
+/**
+ * @brief   Function is to configure the system's systick
+ * @param   none
+ * @retval  none
+ */
+static void _configure_sys_tick(void) {
+    const mk_u32 systick_reload_value = ((MK_CONFIG_CPU_CLOCK_HZ)/(MK_CONFIG_TICK_RATE_HZ));
+    PortConfigureSystemClock(systick_reload_value);
+}
+
+
+/*------------------ Extern Function Definitions -------------------*/
 
 /**
  * @brief   Function is to add a nrewly create mkernel task into scheduler.
  * @param   ptcb(TCB_t*) task's TCB
  * @retval  none
  */
-void mk_scheduler_add_task_to_list(TCB_t *ptcb) {
+void e_mk_scheduler_add_task_to_list(TCB_t *ptcb) {
     /* Indivisual Taskblock for scheduler */
     TaskHandlerForScheduler_t *phandler = (TaskHandlerForScheduler_t*)mk_mem_allocate(sizeof(TaskHandlerForScheduler_t));
 
@@ -57,37 +99,12 @@ void mk_scheduler_add_task_to_list(TCB_t *ptcb) {
 }
 
 /**
- * @brief   Function is to start the mkernel scheduler.
- * @param   schedule_type(mk_ScheduleType_t): scheduling algo
- * @retval  none
- */
-void mk_scheduler_start(mk_ScheduleType_t schedule_type) {
-
-    _scheduler_running = MK_TRUE;
-    _tick_count = INITIAL_TICK_COUNT;
-    _schedule_algo = schedule_type;
-
-    _configure_sys_tick();
-    mk_task_create_idle_task();
-    PortStartScheduler();
-    
-}
-
-static void _configure_sys_tick(void) {
-    const mk_u32 systick_reload_value = ((MK_CONFIG_CPU_CLOCK_HZ)/(MK_CONFIG_TICK_RATE_HZ));
-    PortConfigureSystemClock(systick_reload_value);
-}
-
-/**
- * @brief   Function that returns current sys tick count
+ * @brief   Function that increment the current rtos tick by '1' also
+ *          checks the context switch is required or not
  * @param   none
- * @retval  current systick count
+ * @retval  context switch is required or not 
  */
-mk_u32 get_systick_count(void) {
-    return _tick_count;
-}
-
-mk_bool increment_tick(void) {
+mk_bool e_mk_scheduler_increment_tick(void) {
     mk_bool switch_context = MK_FALSE;
     _tick_count += (TickType_t)1;
 
@@ -101,11 +118,21 @@ mk_bool increment_tick(void) {
     return switch_context;
 }
 
-mk_u32 mk_current_task_sp(void) {
+/**
+ * @brief   Function that return's the current running task's stack pointer
+ * @param   none
+ * @retval  stackpointer value of current running task
+ */
+mk_u32 e_mk_scheduler_current_task_sp(void) {
     return (mk_u32)pcurrent_task->ptcb->ptop_of_stack;
 }
 
-extern void _Idle_task_func(void *param);
-void mk_scheduler_run_first_task(void) {
-    _Idle_task_func(NULL);
+/**
+ * @brief   Function that run the first task while schedule starts
+ * @param   none
+ * @retval  none
+ */
+void e_mk_scheduler_run_first_task(void) {
+    TaskFunction pTaskFunction = (TaskFunction)pcurrent_task->ptcb->pfunc;
+    pTaskFunction(NULL);
 }

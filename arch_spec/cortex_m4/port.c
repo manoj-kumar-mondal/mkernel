@@ -30,9 +30,11 @@ extern TickType_t _tick_count;
 /*------------------ Static Functions Declaration ------------------*/
 static void _set_psp_as_sp(void) __attribute__((naked));
 
-extern mk_bool increment_tick(void);
-extern mk_u32 mk_current_task_sp(void);
-extern void mk_scheduler_run_first_task(void);
+/*------------------ Extern Function Declarations ------------------*/
+extern mk_bool e_mk_scheduler_increment_tick(void);
+extern mk_u32 e_mk_scheduler_current_task_sp(void);
+extern void e_mk_scheduler_run_first_task(void);
+
 /*------------------- All Functions Definitions --------------------*/
 
 /**
@@ -85,7 +87,7 @@ void PortConfigureSystemClock(uint32_t systick_reload_value) {
 void PortStartScheduler(void) {
     enable_sys_tick_counter();
     _set_psp_as_sp();
-    mk_scheduler_run_first_task();
+    e_mk_scheduler_run_first_task();
     while(1);
 }
 
@@ -93,14 +95,14 @@ void PortStartScheduler(void) {
  * @brief Systick handler
  */
 void port_systick_handler(void) {
-    if (MK_TRUE == increment_tick()) {
+    if (MK_TRUE == e_mk_scheduler_increment_tick()) {
         port_pendsv_set_bit(); // set the bit for pendsv handler
     }
 }
 
 static void _set_psp_as_sp(void) {
     __asm volatile ("push {lr}");
-    __asm volatile ("bl mk_current_task_sp"); // get the current running task's sp
+    __asm volatile ("bl e_mk_scheduler_current_task_sp"); // get the current running task's sp
     __asm volatile ("msr psp, r0"); // set the psp as task's sp
     __asm volatile ("pop {lr}");
 

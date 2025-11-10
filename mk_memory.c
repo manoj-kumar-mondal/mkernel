@@ -76,6 +76,11 @@ void mk_mem_init(void) {
     _total_remaining_size = pfirst_free_block->block_size;
 }
 
+/**
+ * @brief   Function that validate the size wanted and allocate the memory.
+ * @param   size(mk_size_t): size wanted to allocate
+ * @retval  (void*) pointer to the allocated memory
+ */
 void *mk_mem_allocate(mk_size_t size) {
     if (size > 0) {
         /* size need to increase to fit MemBlock */
@@ -94,6 +99,11 @@ void *mk_mem_allocate(mk_size_t size) {
     return MK_NULL;
 }
 
+/**
+ * @brief   Function that free the allocated memory created using mk_mem_allocate.
+ * @param   pmem(void*): pointer of the allocated memory
+ * @retval  none
+ */
 void mk_mem_free(void* pmem) {
     MemBlock_t *pblock;
 
@@ -107,6 +117,11 @@ void mk_mem_free(void* pmem) {
     }
 }
 
+/**
+ * @brief   Function that allocate & manage memory from the memory pool
+ * @param   wanted_size(mk_size_t): required size
+ * @retval  (void*) returns the pointer of allocated memory
+ */
 static void *_allocate_memory(mk_size_t wanted_size) {
     MemBlock_t *pprevious_block, *pblock, *pnew_block;
     void *preturn = MK_NULL;
@@ -157,6 +172,11 @@ static void *_allocate_memory(mk_size_t wanted_size) {
     return preturn;
 }
 
+/**
+ * @brief   Function that add the block that freeed using my_free to the free list
+ * @param   pblock(MemBlock_t): pointer to the memory block
+ * @retval  none
+ */
 static void _add_block_to_free_list(MemBlock_t *pblock) {
     MemBlock_t *pnext_block = &_start_block;
     mk_u8 *pu8 = MK_NULL;

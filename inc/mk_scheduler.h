@@ -21,7 +21,6 @@ typedef enum {
 } mk_ScheduleType_t;
 
 /*---------------------- Function Declaration ----------------------*/
-void mk_scheduler_add_task_to_list(TCB_t *ptcb);
 void mk_scheduler_start(mk_ScheduleType_t schedule_type);
 
 #endif // _MK_SCHEDULER_H_

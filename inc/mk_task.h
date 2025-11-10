@@ -10,6 +10,7 @@
 typedef struct {
     StackType_t *ptop_of_stack;
     StackType_t *pstack;
+    void *pfunc;
     mk_u8 priority;
     char task_name[MK_CONFIG_TASK_NAME_MAX_LENGTH];
 } TCB_t;
@@ -27,6 +28,5 @@ typedef struct {
 
 /*---------------------- Function Declaration ----------------------*/
 mk_i32 mk_task_create(mk_TaskInit_t *ptask_init);
-void mk_task_create_idle_task(void);
 
 #endif // _MK_TASK_H_
