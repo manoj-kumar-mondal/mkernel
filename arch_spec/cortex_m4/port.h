@@ -20,5 +20,6 @@ typedef port_Tick_Type  TickType_t;
 StackType_t *PortInitializeStackSpace(StackType_t *ptop_of_stack, void* pcode);
 void PortConfigureSystemClock(uint32_t systick_reload_value);
 void PortStartScheduler(void);
+void PortDoContextSwitch(void);
 
 #endif // _MK_PORT_H_

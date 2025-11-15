@@ -12,6 +12,7 @@ typedef struct {
     StackType_t *pstack;
     void *pfunc;
     mk_u8 priority;
+    TickType_t block_time;
     char task_name[MK_CONFIG_TASK_NAME_MAX_LENGTH];
 } TCB_t;
 
@@ -28,5 +29,6 @@ typedef struct {
 
 /*---------------------- Function Declaration ----------------------*/
 mk_i32 mk_task_create(mk_TaskInit_t *ptask_init);
+void mk_task_delay(TickType_t time_out);
 
 #endif // _MK_TASK_H_

@@ -133,7 +133,7 @@ static void _Idle_task_func(void *param) {
  * @param   none
  * @retval  none
  */
-void e_mk_task_create_idle_task(void) {
+TCB_t *e_mk_task_create_idle_task(void) {
     mk_TaskInit_t idle_task = {
         .priority = RESERVED_MINIMUM_TASK_PRIORITY,
         .stack_depth = MK_CONFIG_MINIMAL_STACK_SIZE,
@@ -141,6 +141,6 @@ void e_mk_task_create_idle_task(void) {
         .task_func = _Idle_task_func,
     };
 
-    mk_task_create(&idle_task);
-
+    TCB_t *pTcbIdle = _create_new_task(&idle_task);
+    return pTcbIdle;
 }

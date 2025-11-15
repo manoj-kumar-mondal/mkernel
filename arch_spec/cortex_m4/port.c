@@ -29,10 +29,11 @@ extern TickType_t _tick_count;
 
 /*------------------ Static Functions Declaration ------------------*/
 static void _set_psp_as_sp(void) __attribute__((naked));
+static void _switch_context(void) __attribute__((naked));
 
 /*------------------ Extern Function Declarations ------------------*/
 extern mk_bool e_mk_scheduler_increment_tick(void);
-extern mk_u32 e_mk_scheduler_current_task_sp(void);
+extern mk_u32 e_mk_scheduler_switch_psp(mk_u32 currentpsp);
 extern void e_mk_scheduler_run_first_task(void);
 
 /*------------------- All Functions Definitions --------------------*/
@@ -85,10 +86,15 @@ void PortConfigureSystemClock(uint32_t systick_reload_value) {
  * @retval  none
  */
 void PortStartScheduler(void) {
-    enable_sys_tick_counter();
     _set_psp_as_sp();
+    enable_sys_tick_counter();
+    
     e_mk_scheduler_run_first_task();
     while(1);
+}
+
+void PortDoContextSwitch(void) {
+    port_pendsv_set_bit(); // set the bit for pendsv handler
 }
 
 /**
@@ -96,17 +102,33 @@ void PortStartScheduler(void) {
  */
 void port_systick_handler(void) {
     if (MK_TRUE == e_mk_scheduler_increment_tick()) {
-        port_pendsv_set_bit(); // set the bit for pendsv handler
+        PortDoContextSwitch();
     }
 }
 
-static void _set_psp_as_sp(void) {
-    __asm volatile ("push {lr}");
-    __asm volatile ("bl e_mk_scheduler_current_task_sp"); // get the current running task's sp
-    __asm volatile ("msr psp, r0"); // set the psp as task's sp
-    __asm volatile ("pop {lr}");
+void port_pendsv_handler(void) {
+    _switch_context();
+}
 
+static void _set_psp_as_sp(void) {
+    __asm volatile ("push {lr}"); // push the lr to msp
+    __asm volatile ("mov r0, #0xFFFFFFFF");
+    __asm volatile ("bl e_mk_scheduler_switch_psp"); // get the current running task's sp
+
+    __asm volatile ("pop {lr}"); // before change the sp to psp, retrieve lr msp
+    __asm volatile ("msr psp, r0"); // set the psp as task's sp
     __asm volatile ("mov r0, #0x02"); // set 2nd bit for to change sp to psp
-    __asm volatile ("msr control, r0"); // now psp is used as msp
+    __asm volatile ("msr control, r0"); // now psp is used as sp
+    __asm volatile ("bx lr");
+}
+
+static void _switch_context(void) {
+    __asm volatile ("push {lr}");
+    __asm volatile ("mrs r0, psp");
+    __asm volatile ("stmdb r0!, {r4-r11}"); // stacking in current psp
+    __asm volatile ("bl e_mk_scheduler_switch_psp"); // function that save the cuurent psp and return new psp    
+    __asm volatile ("ldmia r0!, {r4-r11}"); // unstacking in new psp
+    __asm volatile ("msr psp, r0");
+    __asm volatile ("pop {lr}");
     __asm volatile ("bx lr");
 }
