@@ -51,7 +51,7 @@ static TCB_t *_create_new_task(mk_TaskInit_t *ptask_init) {
     StackType_t *pstack = (StackType_t*)mk_mem_allocate( \
         (mk_size_t)ptask_init->stack_depth * (mk_size_t)sizeof(StackType_t));
         
-        if (pstack != MK_NULL) {
+    if (pstack != MK_NULL) {
         /* allocate memory for the tcb */
         ptcb = (TCB_t*)mk_mem_allocate(sizeof(TCB_t));
 
@@ -59,6 +59,8 @@ static TCB_t *_create_new_task(mk_TaskInit_t *ptask_init) {
             ptcb->pstack = pstack;
             /* initialize the task with default values */
             _initialize_new_task(ptask_init, ptcb);
+        } else {
+            mk_mem_free((void*)pstack);
         }
     }
     return ptcb;
@@ -108,7 +110,7 @@ static void _initialize_new_task(mk_TaskInit_t *ptask_init, TCB_t *ptcb) {
     /* Save the function pointer */
     ptcb->pfunc = (void*)ptask_init->task_func;
 
-    /* Set the top od stack after initializtion*/
+    /* Set the top od stack after initialization */
     ptcb->ptop_of_stack = PortInitializeStackSpace(ptop_of_stack, ptask_init->task_func);
 }
 

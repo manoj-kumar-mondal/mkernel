@@ -22,7 +22,7 @@ static TaskHandlerForScheduler_t start_task_block = {
 }; // this block is dedicated to idle task
 
 static TaskHandlerForScheduler_t *pcurrent_task = &start_task_block;
-static TaskHandlerForScheduler_t *pnext_task = &start_task_block;
+static TaskHandlerForScheduler_t *pnext_task = MK_NULL;
 static mk_u8 _total_task_created = 1U;
 static mk_bool _scheduler_running = MK_FALSE;
 static TickType_t _tick_count;
@@ -177,15 +177,24 @@ mk_bool e_mk_scheduler_increment_tick(void) {
     return switch_context;
 }
 
-mk_u32 e_mk_scheduler_switch_psp(mk_u32 currentpsp) {
-    if (0xFFFFFFFF != currentpsp) {
-        /* save the updated top of stack of the current running task */
-        pcurrent_task->ptcb->ptop_of_stack = (StackType_t*)currentpsp;
-        if (e_running == pcurrent_task->state) {
-            pcurrent_task->state = e_ready;
+mk_u32 e_mk_scheduler_get_curr_psp(void) {
+    if ((MK_NULL == pnext_task) && (pcurrent_task == &start_task_block)) {
+        if (_is_context_switch_required()) {
+            pcurrent_task = pnext_task;
+            if (e_ready == pcurrent_task->state) {
+                pcurrent_task->state = e_running;
+            }
         }
-    } else {
-        pnext_task = start_task_block.pnext;
+    }
+    return (mk_u32)pcurrent_task->ptcb->ptop_of_stack;
+}
+
+mk_u32 e_mk_scheduler_switch_psp(mk_u32 currentpsp) {
+
+    /* save the updated top of stack of the current running task */
+    pcurrent_task->ptcb->ptop_of_stack = (StackType_t*)currentpsp;
+    if (e_running == pcurrent_task->state) {
+        pcurrent_task->state = e_ready;
     }
 
     pcurrent_task = pnext_task;
@@ -198,9 +207,9 @@ mk_u32 e_mk_scheduler_switch_psp(mk_u32 currentpsp) {
  * @param   none
  * @retval  none
  */
-void e_mk_scheduler_run_first_task(void) {
+mk_u32 e_mk_scheduler_run_first_task(void) {
     TaskFunction pTaskFunction = (TaskFunction)pcurrent_task->ptcb->pfunc;
-    pTaskFunction(NULL);
+    return (mk_u32)pTaskFunction;
 }
 
 /**

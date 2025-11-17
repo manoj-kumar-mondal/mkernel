@@ -34,7 +34,8 @@ static void _switch_context(void) __attribute__((naked));
 /*------------------ Extern Function Declarations ------------------*/
 extern mk_bool e_mk_scheduler_increment_tick(void);
 extern mk_u32 e_mk_scheduler_switch_psp(mk_u32 currentpsp);
-extern void e_mk_scheduler_run_first_task(void);
+extern mk_u32 e_mk_scheduler_run_first_task(void);
+extern mk_u32 e_mk_scheduler_get_curr_psp(void);
 
 /*------------------- All Functions Definitions --------------------*/
 
@@ -86,11 +87,8 @@ void PortConfigureSystemClock(uint32_t systick_reload_value) {
  * @retval  none
  */
 void PortStartScheduler(void) {
-    _set_psp_as_sp();
     enable_sys_tick_counter();
-    
-    e_mk_scheduler_run_first_task();
-    while(1);
+    _set_psp_as_sp();
 }
 
 void PortDoContextSwitch(void) {
@@ -112,14 +110,18 @@ void port_pendsv_handler(void) {
 
 static void _set_psp_as_sp(void) {
     __asm volatile ("push {lr}"); // push the lr to msp
-    __asm volatile ("mov r0, #0xFFFFFFFF");
-    __asm volatile ("bl e_mk_scheduler_switch_psp"); // get the current running task's sp
-
-    __asm volatile ("pop {lr}"); // before change the sp to psp, retrieve lr msp
+    __asm volatile ("bl e_mk_scheduler_get_curr_psp"); // get the current running task's sp
     __asm volatile ("msr psp, r0"); // set the psp as task's sp
+
+    __asm volatile ("bl e_mk_scheduler_run_first_task"); // extract first task pc to run
+    __asm volatile ("mov r1, r0"); // storing the pc at r1
+    
+    __asm volatile ("pop {lr}"); // before change the sp to psp, retrieve lr from msp
     __asm volatile ("mov r0, #0x02"); // set 2nd bit for to change sp to psp
     __asm volatile ("msr control, r0"); // now psp is used as sp
-    __asm volatile ("bx lr");
+
+    __asm volatile ("mov r0, #0x00"); // set first argument as NULL
+    __asm volatile ("bx r1"); // branch to first task
 }
 
 static void _switch_context(void) {
